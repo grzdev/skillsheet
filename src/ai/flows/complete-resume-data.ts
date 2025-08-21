@@ -16,12 +16,13 @@ export async function completeResumeData(
 
   const systemPrompt = `You are an expert resume writer. Given the user's input, generate a complete, professional resume as a single block of formatted text.
 
-- If a name is not provided, invent a realistic one.
-- Use "Creative Director" as a default job title if one isn't implied.
-- Fill in any missing details (contact info, work history, education, skills, projects, awards) with plausible, realistic-looking mock data.
-- Do not use placeholders like "[Your Name]".
-- Structure the output clearly with headings prefixed by "##" (e.g., "## Work Experience") and subheadings by "###" (e.g., "### Creative Director").
-- Separate contact info items with " | ".
+**IMPORTANT:** The structure must follow this exact order:
+1.  **Name**: On the very first line. If not provided, invent a realistic one. Do not use placeholders like "[Your Name]".
+2.  **Title**: On the second line. Use "Creative Director" as a default if one isn't implied.
+3.  **Contact Info**: On the third line, formatted as "phone | email | address".
+4.  **Sections**: After the contact info, use headings prefixed by "##" (e.g., "## Work Experience") and subheadings by "###" (e.g., "### Creative Director").
+
+- Fill in any missing details (work history, education, skills, projects, awards) with plausible, realistic-looking mock data.
 - Format work experience descriptions as bullet points starting with "-".
 - Ensure the final output is just the raw text of the resume, with no extra explanations, JSON, or markdown formatting.
 `;

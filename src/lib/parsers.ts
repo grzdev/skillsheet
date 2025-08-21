@@ -1,3 +1,4 @@
+
 import type { ResumeData, PersonalInfo, WorkExperience, Education, Award, Project, ResumeSection } from './types';
 
 export function parseResumeText(text: string): ResumeData | null {
@@ -5,10 +6,15 @@ export function parseResumeText(text: string): ResumeData | null {
 
     const lines = text.split('\n').filter(line => line.trim() !== '');
     
-    const contactParts = (lines[2] || '').split(' | ');
+    // With the new AI prompt, we can reliably assume the first three lines are header info.
+    const name = lines[0] || '';
+    const title = lines[1] || '';
+    const contactLine = lines[2] || '';
+    const contactParts = contactLine.split(' | ');
+
     const personalInfo: PersonalInfo = {
-        name: lines[0] || '',
-        title: lines[1] || '',
+        name,
+        title,
         contact: {
             phone: contactParts[0]?.trim() || '',
             email: contactParts[1]?.trim() || '',
@@ -29,15 +35,18 @@ export function parseResumeText(text: string): ResumeData | null {
     let currentWorkExperience: WorkExperience | null = null;
     let currentProject: Project | null = null;
 
-    for (let i = 3; i < lines.length; i++) {
-        const line = lines[i].trim();
+    // Start parsing from the first heading, which should be after the header info
+    const firstHeadingIndex = lines.findIndex(line => line.startsWith('##'));
+
+    for (let i = firstHeadingIndex; i >= 0 && i < lines.length; i++) {
+        const line = lines[i]?.trim();
         if (!line) continue;
 
         if (line.startsWith('## ')) {
-            const title = line.substring(3);
+            const sectionTitle = line.substring(3).trim();
             currentWorkExperience = null; // Reset when we hit a new major section
             currentProject = null;
-            switch (title.toLowerCase()) {
+            switch (sectionTitle.toLowerCase()) {
                 case 'professional summary':
                     currentSectionKey = 'summary';
                     break;
@@ -71,7 +80,7 @@ export function parseResumeText(text: string): ResumeData | null {
                     break;
                 case 'skills':
                     if (Array.isArray(sections.skills.content)) {
-                       sections.skills.content = line.split(',').map(s => s.trim());
+                       sections.skills.content = line.split(/, |,| and /).map(s => s.trim());
                     }
                     break;
                 case 'workExperience':
@@ -99,16 +108,19 @@ export function parseResumeText(text: string): ResumeData | null {
                     break;
                 case 'education':
                     if (line.startsWith('### ')) {
-                         const nextLine = lines[++i];
+                         const nextLineIndex = i + 1;
+                         const nextLine = lines[nextLineIndex];
                          const parts = nextLine ? nextLine.split(' | ') : [];
                          const edu: Education = {
                            degree: line.substring(4),
                            institution: parts[0]?.trim() || '',
                            date: parts[1]?.trim() || '',
                            location: parts[2]?.trim() || '',
-                           description: lines[i+1] && !lines[i+1].startsWith('###') && !lines[i+1].startsWith('## ') ? lines[++i] : undefined,
+                           description: lines[nextLineIndex+1] && !lines[nextLineIndex+1].startsWith('###') && !lines[nextLineIndex+1].startsWith('## ') ? lines[nextLineIndex+1] : undefined,
                         };
                         (sections.education.content as Education[]).push(edu);
+                        if (edu.description) i++; // advance past description
+                        if (nextLine) i++; // advance past institution/date line
                     }
                     break;
                 case 'projects':
@@ -140,7 +152,7 @@ export function parseResumeText(text: string): ResumeData | null {
             }
         }
     }
-    // Push the last work experience item
+    // Push the last item
     if (currentWorkExperience) {
         (sections.workExperience.content as WorkExperience[]).push(currentWorkExperience);
     }
