@@ -108,19 +108,33 @@ export function parseResumeText(text: string): ResumeData | null {
                     break;
                 case 'education':
                     if (line.startsWith('### ')) {
-                         const nextLineIndex = i + 1;
-                         const nextLine = lines[nextLineIndex];
-                         const parts = nextLine ? nextLine.split(' | ') : [];
-                         const edu: Education = {
-                           degree: line.substring(4),
-                           institution: parts[0]?.trim() || '',
-                           date: parts[1]?.trim() || '',
-                           location: parts[2]?.trim() || '',
-                           description: lines[nextLineIndex+1] && !lines[nextLineIndex+1].startsWith('###') && !lines[nextLineIndex+1].startsWith('## ') ? lines[nextLineIndex+1] : undefined,
+                        const degree = line.substring(4).trim();
+                        let institution = '', date = '', location = '', description = undefined;
+                        
+                        // Look ahead for details
+                        let j = i + 1;
+                        while (j < lines.length && !lines[j].startsWith('##')) {
+                            const currentLine = lines[j].trim();
+                            if (currentLine.includes(' | ')) {
+                                const parts = currentLine.split(' | ');
+                                institution = parts[0]?.trim() || '';
+                                date = parts[1]?.trim() || '';
+                                location = parts[2]?.trim() || '';
+                            } else if (!currentLine.startsWith('### ') && currentLine.length > 0) {
+                                description = currentLine.startsWith('- ') ? currentLine.substring(2) : currentLine;
+                            }
+                            j++;
+                        }
+                        
+                        const edu: Education = {
+                            degree,
+                            institution,
+                            date,
+                            location,
+                            description
                         };
                         (sections.education.content as Education[]).push(edu);
-                        if (edu.description) i++; // advance past description
-                        if (nextLine) i++; // advance past institution/date line
+                        i = j - 1; // Skip processed lines
                     }
                     break;
                 case 'projects':

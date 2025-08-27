@@ -25,11 +25,6 @@ const CoralTemplate: React.FC<TemplateProps> = ({ data }) => {
         </div>
       </header>
 
-      {/* Summary / Introduction */}
-      <p className="mb-6 indent-8">
-        {summary.content as string}
-      </p>
-
       {/* Main Content */}
       <main>
         {/* Summary Section */}

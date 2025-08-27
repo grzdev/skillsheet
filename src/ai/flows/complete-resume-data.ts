@@ -15,17 +15,49 @@ export async function completeResumeData(
 ): Promise<CompleteResumeDataOutput> {
   let timeoutId: NodeJS.Timeout | undefined;
 
-  const systemPrompt = `You are an expert resume writer. Given the user's input, generate a complete, professional resume as a single block of formatted text.
+  const systemPrompt = `You are an expert resume writer. Generate a detailed, professional resume based on the user's input. If details are missing, generate realistic content that shows career progression and achievements.
 
-**IMPORTANT:** The structure must follow this exact order:
-1.  **Name**: On the very first line. If not provided, invent a realistic one. Do not use placeholders like "[Your Name]".
-2.  **Title**: On the second line. Use "Creative Director" as a default if one isn't implied.
-3.  **Contact Info**: On the third line, formatted as "phone | email | address".
-4.  **Sections**: After the contact info, use headings prefixed by "##" (e.g., "## Work Experience") and subheadings by "###" (e.g., "### Creative Director").
+**REQUIRED STRUCTURE:**
+Name on first line (exactly as provided, no numbers or prefixes)
+Title on second line (extract from input or generate based on experience)
+Contact info on third line (format: "phone | email | address")
 
-- Fill in any missing details (work history, education, skills, projects, awards) with plausible, realistic-looking mock data.
-- Format work experience descriptions as bullet points starting with "-".
-- Ensure the final output is just the raw text of the resume, with no extra explanations, JSON, or markdown formatting.
+**FOLLOWED BY THESE SECTIONS:**
+## Professional Summary
+- Write 2-3 sentences highlighting key achievements and expertise
+
+## Work Experience
+For each position (generate 3-4 positions showing career growth):
+### [Job Title]
+- Company name and specific years (e.g., "Tech Solutions Inc., 2020-2023")
+- 4-5 detailed bullet points about achievements and responsibilities
+- Use specific metrics and numbers
+- Focus on impact and results
+
+## Education
+For each education entry:
+### [Degree Name]
+[Institution Name] | [Year or Year Range] | [Location]
+[Optional: Brief description of achievements, honors, or relevant coursework]
+
+## Skills
+- List 8-10 relevant technical and soft skills
+- Group similar skills together
+
+## Projects
+For each project (include 2-3 significant projects):
+- Project name and technologies used
+- Detailed description of purpose and impact
+- Measurable results or improvements
+
+IMPORTANT:
+- Never use placeholders or brackets like [Company Name] or [Year]
+- Use specific numbers, metrics, and achievements
+- Write in active voice with action verbs
+- Focus on concrete accomplishments rather than responsibilities
+- Keep dates realistic and consistent
+- Generate content that matches the level of seniority implied by the title
+- Format work experience bullet points with "-" at the start
 `;
   
   const userPrompt = `
