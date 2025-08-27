@@ -13,6 +13,7 @@ export type CompleteResumeDataOutput = string;
 export async function completeResumeData(
   input: CompleteResumeDataInput
 ): Promise<CompleteResumeDataOutput> {
+  let timeoutId: NodeJS.Timeout | undefined;
 
   const systemPrompt = `You are an expert resume writer. Given the user's input, generate a complete, professional resume as a single block of formatted text.
 
@@ -35,14 +36,20 @@ Details: ${input.otherDetails || 'Not provided'}
 `;
 
   try {
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://github.com/grzdev/skillsheet',
+        'X-Title': 'Skillsheet Resume Builder',
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify({
-        model: 'z-ai/glm-4.5-air:free',
+        model: 'openai/gpt-3.5-turbo',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -75,7 +82,11 @@ Details: ${input.otherDetails || 'Not provided'}
 
   } catch (error: any) {
     console.error('Failed to complete resume data with OpenRouter:', error);
-    // Re-throw the original error to be caught by the server action
-    throw error;
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
+    throw new Error(error.message || 'Failed to generate resume. Please try again.');
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }

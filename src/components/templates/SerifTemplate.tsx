@@ -14,7 +14,15 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 );
 
 const SerifTemplate: React.FC<TemplateProps> = ({ data }) => {
+  if (!data) {
+    return <div>Loading...</div>;
+  }
+
   const { personalInfo, summary, workExperience, education, skills, awards, projects } = data;
+
+  if (!personalInfo) {
+    return <div>Missing personal information</div>;
+  }
 
   return (
     <div className="font-serif bg-white text-gray-800 p-10 h-full w-full flex flex-col">
@@ -23,9 +31,9 @@ const SerifTemplate: React.FC<TemplateProps> = ({ data }) => {
         <h1 className="text-5xl font-bold tracking-tight text-black">{personalInfo.name}</h1>
         <p className="text-md text-gray-500 mt-2">{summary.content as string}</p>
         <div className="text-right text-xs text-gray-500 -mt-8">
-          <p>{personalInfo.contact.phone}</p>
-          <p>{personalInfo.contact.email}</p>
-          <p>{personalInfo.contact.address}</p>
+          {personalInfo.contact.phone && <p>{personalInfo.contact.phone}</p>}
+          {personalInfo.contact.email && <p>{personalInfo.contact.email}</p>}
+          {personalInfo.contact.address && <p>{personalInfo.contact.address}</p>}
         </div>
       </header>
       
