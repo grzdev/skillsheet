@@ -34,7 +34,7 @@ ${input.editInstructions}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-goog-api-key': 'AIzaSyD4MA6PlV66rTvtasGB6lJBzxR-gE4wwsI',
+        'X-goog-api-key': process.env.GEMINI_API_KEY || '',
       },
       body: JSON.stringify({
         contents: [
