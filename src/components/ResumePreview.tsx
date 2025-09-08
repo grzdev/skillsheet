@@ -56,7 +56,6 @@ export default function ResumePreview({
         backgroundColor: '#ffffff',
       });
       const imgData = canvas.toDataURL('image/png');
-      
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
@@ -64,20 +63,39 @@ export default function ResumePreview({
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      
+      const pdfHeight = pdf.internal.pageSize.getHeight();
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
-      
       const pageWidthToCanvasRatio = pdfWidth / canvasWidth;
-      
       const finalHeight = canvasHeight * pageWidthToCanvasRatio;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
+      let remainingHeight = finalHeight;
+      let position = 0;
+
+      // If content fits on one page
+      if (finalHeight <= pdfHeight) {
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
+      } else {
+        // Split into multiple pages
+        while (remainingHeight > 0) {
+          pdf.addImage(
+            imgData,
+            'PNG',
+            0,
+            position,
+            pdfWidth,
+            Math.min(remainingHeight, pdfHeight)
+          );
+          remainingHeight -= pdfHeight;
+          position -= pdfHeight;
+          if (remainingHeight > 0) pdf.addPage();
+        }
+      }
       pdf.save('resume.pdf');
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
-        setIsDownloading(false);
+      setIsDownloading(false);
     }
   };
   

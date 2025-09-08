@@ -30,36 +30,28 @@ ${input.editInstructions}
 `;
 
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'X-goog-api-key': 'AIzaSyD4MA6PlV66rTvtasGB6lJBzxR-gE4wwsI',
       },
       body: JSON.stringify({
-        model: 'z-ai/glm-4.5-air:free',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
+        contents: [
+          { parts: [{ text: `${systemPrompt}\n${userPrompt}` }] }
+        ]
       }),
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('OpenRouter API error:', response.status, errorBody);
-      throw new Error(`OpenRouter API request failed with status ${response.status}: ${errorBody}`);
+      console.error('Gemini API error:', response.status, errorBody);
+      throw new Error(`Gemini API request failed with status ${response.status}: ${errorBody}`);
     }
 
     const result = await response.json();
-    const choice = result.choices[0];
-    const editedResume = choice?.message?.content;
+    const editedResume = result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (editedResume === null) {
-       const stopReason = choice?.finish_reason || 'unknown reason';
-       throw new Error(`The AI model returned no content. Stop reason: ${stopReason}`);
-    }
-    
     if (!editedResume) {
       console.error('API returned an empty or unexpected response:', result);
       throw new Error('API returned an empty response.');
@@ -67,8 +59,7 @@ ${input.editInstructions}
 
     return { editedResume };
   } catch (error: any) {
-    console.error('Failed to edit resume with OpenRouter:', error);
-    // Re-throw the original error to be caught by the server action
+    console.error('Failed to edit resume with Gemini:', error);
     throw error;
   }
-}
+  }

@@ -15,110 +15,73 @@ export async function completeResumeData(
 ): Promise<CompleteResumeDataOutput> {
   let timeoutId: NodeJS.Timeout | undefined;
 
-  const systemPrompt = `You are an expert resume writer. Generate a detailed, professional resume based on the user's input. If details are missing, generate realistic content that shows career progression and achievements.
+  const systemPrompt = `You are an expert resume writer. Generate a detailed, professional resume using ONLY the user's provided name and details. Do NOT use placeholders like 'Your Name' or generic job titles. Always use the user's input for name, job title, and work experience. If details are missing, generate realistic content that matches the user's background and career progression.
 
 **REQUIRED STRUCTURE:**
-Name on first line (exactly as provided, no numbers or prefixes)
+Name on first line (ALWAYS use the user's provided name, never use placeholders or generic names)
 Title on second line (extract from input or generate based on experience)
-Contact info on third line (format: "phone | email | address")
+Contact info on third line (ALWAYS generate realistic phone, email, and address if not provided; use mock data if necessary, but never leave blank)
 
 **FOLLOWED BY THESE SECTIONS:**
 ## Professional Summary
-- Write 2-3 sentences highlighting key achievements and expertise
+- Write 2-3 sentences highlighting key achievements and expertise, based on the user's details.
 
 ## Work Experience
-For each position (generate 3-4 positions showing career growth):
+- For each position, use the user's job history and details. If the user provided specific roles or achievements, include them. If not, generate 3-4 positions showing career growth, but always use the user's input if available. STRICTLY LIMIT to two bullet points per position, never more.
 ### [Job Title]
 - Company name and specific years (e.g., "Tech Solutions Inc., 2020-2023")
-- 4-5 detailed bullet points about achievements and responsibilities
-- Use specific metrics and numbers
-- Focus on impact and results
+- 2 detailed bullet points about achievements and responsibilities, using the user's input if provided. NEVER write more than 2 bullet points per position.
+- Use specific metrics and numbers.
+- Focus on impact and results.
 
 ## Education
-For each education entry:
+- If the user did not provide education, ALWAYS generate at least one realistic education entry. For each education entry, use the user's details if provided. Otherwise, generate realistic entries.
 ### [Degree Name]
 [Institution Name] | [Year or Year Range] | [Location]
 [Optional: Brief description of achievements, honors, or relevant coursework]
 
 ## Skills
-- List 8-10 relevant technical and soft skills
-- Group similar skills together
+- List 8-10 relevant technical and soft skills, using the user's input if provided.
 
 ## Projects
-For each project (include 2-3 significant projects):
+- If the user did not provide projects, ALWAYS generate at least one realistic project entry. For each project, use the user's details if provided. Otherwise, generate 2-3 significant projects.
 - Project name and technologies used
 - Detailed description of purpose and impact
 - Measurable results or improvements
-
-IMPORTANT:
-- Never use placeholders or brackets like [Company Name] or [Year]
-- Use specific numbers, metrics, and achievements
-- Write in active voice with action verbs
-- Focus on concrete accomplishments rather than responsibilities
-- Keep dates realistic and consistent
-- Generate content that matches the level of seniority implied by the title
-- Format work experience bullet points with "-" at the start
-`;
-  
-  const userPrompt = `
-Here is the information I have. Please generate a full resume from it.
-
-Name: ${input.name || 'Not provided'}
-Details: ${input.otherDetails || 'Not provided'}
+ Format work experience bullet points with "-" at the start
 `;
 
+  const userPrompt = `Here is the information I have. Please generate a full resume from it. Use my name and job details exactly as provided.\n\nName: ${input.name || 'Not provided'}\nDetails: ${input.otherDetails || 'Not provided'}\n`;
   try {
-    const controller = new AbortController();
-    timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'https://github.com/grzdev/skillsheet',
-        'X-Title': 'Skillsheet Resume Builder',
         'Content-Type': 'application/json',
+        'X-goog-api-key': 'AIzaSyD4MA6PlV66rTvtasGB6lJBzxR-gE4wwsI',
       },
-      signal: controller.signal,
       body: JSON.stringify({
-        model: 'openai/gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
+        contents: [
+          { parts: [{ text: `${systemPrompt}\n${userPrompt}` }] }
+        ]
       }),
     });
 
     if (!response.ok) {
-       const errorBody = await response.text();
-       console.error('OpenRouter API error:', response.status, errorBody);
-       throw new Error(`OpenRouter API request failed with status ${response.status}: ${errorBody}`);
+      const errorBody = await response.text();
+      console.error('Gemini API error:', response.status, errorBody);
+      throw new Error(`Gemini API request failed with status ${response.status}: ${errorBody}`);
     }
 
     const result = await response.json();
-    const choice = result.choices[0];
-    const resumeText = choice?.message?.content;
-    
-    if (resumeText === null) {
-       // Handle cases where the model returns null content, often due to safety flags
-       const stopReason = choice?.finish_reason || 'unknown reason';
-       throw new Error(`The AI model returned no content. Stop reason: ${stopReason}`);
-    }
-    
+    const resumeText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
     if (!resumeText) {
-      console.error('API returned an empty or unexpected response:', result);
       throw new Error('API returned an empty response.');
     }
 
     return resumeText;
-
   } catch (error: any) {
-    console.error('Failed to complete resume data with OpenRouter:', error);
-    if (error.name === 'AbortError') {
-      throw new Error('Request timed out. Please try again.');
-    }
+    console.error('Failed to complete resume data with Gemini:', error);
     throw new Error(error.message || 'Failed to generate resume. Please try again.');
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
   }
 }

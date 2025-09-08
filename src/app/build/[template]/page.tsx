@@ -188,8 +188,8 @@ export default function BuilderPage() {
 
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 container mx-auto p-4 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start min-h-0">
+    <div className="h-full flex flex-col px-4 py-6 md:px-8 md:py-10">
+      <div className="flex-1 container mx-auto p-6 md:p-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start min-h-0 rounded-xl bg-white shadow-sm">
         <div className="flex flex-col h-full max-h-[calc(100vh-120px)] min-w-0">
           <ChatInterface
             ref={chatInputRef}
@@ -197,7 +197,11 @@ export default function BuilderPage() {
             isLoading={isPending}
             phase={phase}
           />
-           <div className='flex gap-4 mt-4 no-print'>
+          {/* Mobile Resume Preview: always show below buttons */}
+          <div className="block lg:hidden mt-6">
+            <ResumePreview resumeText={resumeText} templateName={templateName} />
+          </div>
+          <div className='flex gap-4 mt-4 no-print'>
             {phase === 'preview' && (
               <Button onClick={handleBackToEditing} disabled={isPending} className="w-full" variant="outline">
                 Back to Editing
@@ -214,8 +218,9 @@ export default function BuilderPage() {
                 {primaryAction.label}
               </Button>
             )}
-           </div>
+          </div>
         </div>
+        {/* Desktop Resume Preview */}
         <div className="h-full max-h-[calc(100vh-120px)] hidden lg:flex flex-col min-w-0">
           <div className="w-full h-full min-h-0">
             <ResumePreview resumeText={resumeText} templateName={templateName} />
